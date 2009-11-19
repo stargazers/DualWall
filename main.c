@@ -1,67 +1,74 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <gtk/gtk.h>
+#include <Imlib2.h>
 
-int main( int argc, char *argv[] )
+int 
+main( int argc, char *argv[] )
 {
-	if( argc < 6 )
-	{
-		printf( "Give image as a first paramter!\n" );
-		exit(1);
-	}
+  Imlib_Image input_image;
+  Imlib_Image output_image;
 
-	// Width 1 and 2 and Height 1 and 2
-	int w1, w2, h1, h2;
-	int width, height;
+  int image1_width, image1_height, image2_width, image2_height;
+  int input_width, input_height, output_width;
+  
+  if( argc < 7 )  
+    {
+      printf( "Usage: %s inputfile img1_width img1_height ", argv[0] );
+      printf( "img2_width img2_height output.jpg\n" ); 
+      exit(1);
+    }
 
-	// Set requested sizes to integers.
-	w1 = atoi( argv[2] );
-	h1 = atoi( argv[3] );
-	w2 = atoi( argv[4] );
-	h2 = atoi( argv[5] );
+  FILE *fp;
+  fp = fopen( argv[1], "r" );
 
-	// New pixbuf height
-	height = h1+h2;
+  if( fp == NULL ) 
+    {
+      printf( "File %s not found!\n", argv[1] );
+      exit(1);
+    }
 
-	// New pixbuf width
-	if( w1 > w2 )
-		width = w1;
-	else
-		width = w2;
+  image1_width = atoi( argv[2] );
+  image1_height = atoi( argv[3] );
+  image2_width = atoi( argv[4] );
+  image2_height = atoi( argv[5] );
 
-	FILE *fp;
-	fp = fopen( argv[1], "r" );
+  input_image = imlib_load_image( argv[1] );
 
-	if( fp == NULL )
-	{
-		printf( "File %s not found!\n", argv[1] );
-		exit(1);
-	}
+  // Output image width must be selected by wider image
+  if( image1_width > image2_width )
+    output_width = image1_width;
+  else
+    output_width = image2_width;
 
-	gtk_init( &argc, &argv );
+  output_image = imlib_create_image( output_width,
+				     image1_height + image2_height );
 
-	// Two pixbufs because two different images 
-	GdkPixbuf *pb;
-	GdkPixbuf *pb2;
+  if(! input_image )
+    {
+      printf( "Failed to load image %s\n", argv[1] );
+      exit(1);
+    }
 
-	// Here we store final pixbuf what will be saved to file.
-	GdkPixbuf *new_pb;
+  // Read original image size
+  imlib_context_set_image( input_image );
+  input_width = imlib_image_get_width();
+  input_height = imlib_image_get_height();
 
-	GError *error = NULL;
+  imlib_context_set_image( output_image );
 
-	// New pixbuf is just empty
-	new_pb = gdk_pixbuf_new( GDK_COLORSPACE_RGB, TRUE, 8,
-		width, height );
+  // Copy whole input image to output image
+  imlib_blend_image_onto_image( input_image, 0, 0, 0, 
+				input_width, input_height, 
+				0, 0,
+				image1_width, image1_height );
 
-	pb = gdk_pixbuf_new_from_file_at_scale( argv[1], w1, h1, 
-		FALSE, &error );
+  imlib_blend_image_onto_image( input_image, 0, 0, 0,
+				input_width, input_height,
+				0, image1_height,
+				image2_width, image2_height );
 
-	pb2 = gdk_pixbuf_new_from_file_at_scale( argv[1], w2, h2, 
-		FALSE, &error );
+  imlib_save_image( argv[6] );
+ 
 
-	gdk_pixbuf_copy_area( pb, 0, 0, w1, h1, new_pb, 0, h2 );
-	gdk_pixbuf_copy_area( pb2, 0, 0, w2, h2, new_pb, 0, 0 );
-	gdk_pixbuf_save( new_pb, argv[6], "jpeg", &error, "quality", 
-		"85", NULL );
-	return 0;
+  return 0;
 }
