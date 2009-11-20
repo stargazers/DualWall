@@ -35,6 +35,7 @@ main( int argc, char *argv[] )
       exit(1);
     }
 
+  // Check if input file exists or not. If not, quit.
   FILE *fp;
   fp = fopen( argv[1], "r" );
 
@@ -44,6 +45,7 @@ main( int argc, char *argv[] )
       exit(1);
     }
 
+  // Read output image dimensions
   image1_width = atoi( argv[2] );
   image1_height = atoi( argv[3] );
   image2_width = atoi( argv[4] );
@@ -57,6 +59,7 @@ main( int argc, char *argv[] )
   else
     output_width = image2_width;
 
+  // Create new empty image
   output_image = imlib_create_image( output_width,
 				     image1_height + image2_height );
 
@@ -86,6 +89,5 @@ main( int argc, char *argv[] )
 
   imlib_save_image( argv[6] );
  
-
   return 0;
 }
